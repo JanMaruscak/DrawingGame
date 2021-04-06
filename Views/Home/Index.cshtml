@@ -1,8 +1,134 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿<div class="container" style=" height: 80vh;">
+    <div class="row" style=" height: 100%;">
+        <div class="col-3 users-container" style=" flex-direction: column; display: flex; padding: 0; position:relative;   max-height: calc(100vh - 140px);">
+            <span class="users-header">Player list</span>
+            <ul class="users" style="padding-top:30px;flex-grow:1;margin-bottom:0">
+            </ul>
+            <button class="startBtn" onclick="startGame()">Start</button>
+        </div>
+        <div class="col-9" style="max-height: 100%" >
+            <div class="drawing-board" style=" height: 70%; margin-bottom: 10px;">
+               <canvas id="graphics"></canvas>
+            </div>
+            <div class="chat-container" style=" height: calc( 30% - 10px ); display:flex; flex-direction:column">
+                <span class="chat-header">Chat</span>
+                <ul class="chat" style="overflow-y:scroll;flex-grow:1">
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+                </ul>
+                <div style="width: 100%; display:flex"><input type="text" class="msg" style="flex-grow:1" /><button class="sendBtn">Odeslat</button> </div>
+            </div>
+        </div>
+    </div>
 </div>
+<script src="~/lib/signalr/signalr.min.js"></script>
+<script>
+
+var canvas = document.getElementById("graphics");
+  canvas.style.width ='100%';
+  canvas.style.height='100%';
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  
+    var nickName = prompt("Nickname:");
+
+    var connection = new signalR.HubConnectionBuilder()
+        .configureLogging("trace")
+        .withUrl("/hub")
+        .build();
+    
+    
+    var input = document.querySelector(".msg");
+    input.addEventListener("keyup", function(event) {
+      if (event.keyCode === 13) {
+        var msg = document.querySelector(".msg");
+        connection.invoke("processMessage", msg.value);
+        input.value = "";
+      }
+    }); 
+
+    var sendBtn = document.querySelector(".sendBtn");
+    sendBtn.addEventListener("click", function () {
+        var msg = document.querySelector(".msg");
+        connection.invoke("processMessage", msg.value);
+        input.value = "";
+    })
+
+    function refreshUsers(users) {
+        var ul = document.querySelector(".users");
+        ul.innerHTML = "";
+        for (var k in users) {
+            var user = users[k];
+            var item = document.createElement("li");
+            item.innerText = user;
+            ul.appendChild(item);
+        }
+    }
+    function startGame() {
+        connection.invoke("startGame");
+    }
+    connection.on("usersChanged", function (users) {
+        refreshUsers(users);
+    });
+    connection.on("draw!", function () {
+        var c = document.querySelector("#graphics");
+        var ctx = c.getContext("2d");
+        var lastX = -1, lastY = -1;
+        var lines = [];
+        c.addEventListener("mousedown", function (evt) {
+            lines = [];
+            lastX = evt.layerX;
+            lastY = evt.layerY;
+        });
+        c.addEventListener("mousemove", function (evt) {
+
+            if (evt.buttons === 1) { //drzim tlacitko mysi
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(evt.layerX, evt.layerY);
+                ctx.stroke();
+                lines.push({ x: evt.layerX, y: evt.layerY });
+                //console.log(lastX, lastY, evt.layerX, evt.layerY);
+            }
+            lastX = evt.layerX;
+            lastY = evt.layerY;
+            //debugger;
+            //zjistit je stisknuto tlacitko
+              //nakresli caru od pozice stisku
+              //odesli data
+        });
+        c.addEventListener("mouseup", function (evt) {
+            connection.invoke("sendLines", lines);
+        });
+        document.querySelector(".startBtn").setAttribute("disabled", "disabled");
+    });
+    connection.on("chatMessage", function (msg) {
+        var chat = document.querySelector(".chat");
+        var li = document.createElement("li");
+        li.innerText = msg;
+        chat.appendChild(li);
+        chat.scrollTop = chat.scrollHeight;
+    });
+    connection.on("guess!", function () {
+        document.querySelector(".startBtn").setAttribute("disabled", "disabled");
+    });
+    connection.on("drawLines", function (lines) {
+        var c = document.querySelector("#graphics");
+        var ctx = c.getContext("2d");
+        if (lines.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(lines[0].x, lines[0].y);
+        }
+        for (var i = 1; i < lines.length; i++) {
+            ctx.lineTo(lines[i].x, lines[i].y);
+        }
+        ctx.stroke();
+    });
+    connection.start().then(t => {
+        console.log("connected");
+        connection.invoke("setProfile", nickName);
+        connection.invoke("getUsers").then(function (users) {
+            refreshUsers(users);
+        });
+        
+    });
+</script>
