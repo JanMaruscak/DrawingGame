@@ -64,6 +64,18 @@ button {
   padding: 10px;
 }
 
+.drawing-info {
+  border-top: 1px solid #222222;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#draw-header {
+  font-weight: bold;
+  font-size: 32px;
+}
+
 input {
   border: 1px solid #222222;
   font-size: 20px;

@@ -51,7 +51,8 @@ namespace DrawingGame.Hubs
             ValidResponse.Add(NormalizedValidThing.ToLower());
             ValidResponse.Add(NormalizedValidThing.ToUpper());
 
-            await this.Clients.Client(connectionId).SendAsync("chatMessage", $"Nakresli {validThing}");
+            //await this.Clients.Client(connectionId).SendAsync("chatMessage", $"Nakresli {validThing}");
+            await this.Clients.Client(connectionId).SendAsync("drawInfo", $"Nakresli {validThing}");
             await this.Clients.AllExcept(connectionId).SendAsync("guess!");
             await this.Clients.AllExcept(connectionId).SendAsync("chatMessage", "Uhodnete co to je");
         }
@@ -59,7 +60,7 @@ namespace DrawingGame.Hubs
         {
             if (ValidResponse.Contains(msg))
             {
-                await this.Clients.Caller.SendAsync("chatMessage", "uhodl jsi");
+                await this.Clients.Caller.SendAsync("chatMessage", "Uhodl jsi !");
                 await this.Clients.Others.SendAsync("chatMessage", $"{users[this.Context.ConnectionId]} uhodl co se kresli");
             }
             else
