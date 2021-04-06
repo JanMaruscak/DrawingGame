@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +29,12 @@ namespace DrawingGame.Hubs
         static Random r = new Random();
         static string[] Things = new string[] { "Banán", "Jablko", "Kočárek", "Trumpetu" };
         static List<string> ValidResponse = new List<string>();
+
+        public GameHub()
+        {
+            string wordsRaw = File.ReadAllText(Environment.CurrentDirectory +"/App_Data/words.txt");
+            Things = wordsRaw.Split(';');
+        }
         public async Task StartGame()
         {
             var rand = -1;
