@@ -13,4 +13,10 @@
     <Folder Include="Views\Lobby" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="App_Data\words.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
