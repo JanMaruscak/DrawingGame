@@ -1,18 +1,25 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace DrawingGame.Hubs
 {
     public class GameHub:Hub
     {
         static Dictionary<string, string> users = new Dictionary<string, string>();
+        private static List<string> Guessed = new List<string>();
+        private static string painterId = "";
+        private IHubContext<GameHub> _hubContext;
         public async Task SetProfile(string nickName)
         {
+            if (users.ContainsValue(nickName)) return;
+            if(users.Count > 12) return;
             lock (users)
             {
                 if (!users.ContainsKey(this.Context.ConnectionId))
@@ -20,7 +27,7 @@ namespace DrawingGame.Hubs
                 else
                     users[this.Context.ConnectionId] = nickName;
             }
-            await this.Clients.Others.SendAsync("usersChanged", users);
+            await this.Clients.Others.SendAsync("usersChanged", users, Guessed);
         }
         public Dictionary<string,string> GetUsers()
         {
@@ -29,20 +36,25 @@ namespace DrawingGame.Hubs
         static Random r = new Random();
         static string[] Things = new string[] { "Banán", "Jablko", "Kočárek", "Trumpetu" };
         static List<string> ValidResponse = new List<string>();
+        private static int GameIndex = 0;
 
-        public GameHub()
+        public GameHub(IHubContext<GameHub> hubContext)
         {
             string wordsRaw = File.ReadAllText(Environment.CurrentDirectory +"/App_Data/words.txt");
+            wordsRaw = wordsRaw.ToLower();
             Things = wordsRaw.Split(';');
+            _hubContext = hubContext;
         }
         public async Task StartGame()
         {
+            Guessed.Clear();
             var rand = -1;
             lock (r)
             {
                 rand = r.Next(0, users.Keys.Count);
             }
             var connectionId = users.Keys.ToArray()[rand];
+            painterId = connectionId;
             await this.Clients.Client(connectionId).SendAsync("draw!");
             lock (r)
             {
@@ -60,15 +72,44 @@ namespace DrawingGame.Hubs
 
             //await this.Clients.Client(connectionId).SendAsync("chatMessage", $"Nakresli {validThing}");
             await this.Clients.Client(connectionId).SendAsync("drawInfo", $"Nakresli {validThing}");
+            await this.Clients.AllExcept(connectionId).SendAsync("drawInfo", $"Úhadni co {users[connectionId]} kreslí!");
             await this.Clients.AllExcept(connectionId).SendAsync("guess!");
-            await this.Clients.AllExcept(connectionId).SendAsync("chatMessage", "Uhodnete co to je");
+
+            GameIndex++;
+            StopTimer();
         }
+
+        public async Task StopGame()
+        {
+            await this._hubContext.Clients.All.SendAsync("drawInfo", "Konec kola");
+            await this._hubContext.Clients.All.SendAsync("gameStop");
+            Guessed.Clear();
+            await this._hubContext.Clients.All.SendAsync("usersChanged", users, Guessed);
+
+        }
+
+        private async void StopTimer()
+        {
+            int index = GameIndex;
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            if(index == GameIndex)
+                await StopGame();
+        }
+
         public async Task ProcessMessage(string msg)
         {
             if (ValidResponse.Contains(msg))
             {
-                await this.Clients.Caller.SendAsync("chatMessage", "Uhodl jsi !");
+                await this.Clients.Caller.SendAsync("drawInfo", $"Uhodl jsi!");
                 await this.Clients.Others.SendAsync("chatMessage", $"{users[this.Context.ConnectionId]} uhodl co se kresli");
+                Guessed.Add(users[this.Context.ConnectionId]);
+                if (Guessed.Count == users.Count - 1)
+                {
+                    await this.Clients.All.SendAsync("gameStop");
+                    await this._hubContext.Clients.All.SendAsync("drawInfo", "Konec kola");
+                    Guessed.Clear();
+                }
+                await this.Clients.All.SendAsync("usersChanged", users, Guessed);
             }
             else
             {

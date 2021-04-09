@@ -50,6 +50,9 @@
   background-color: #FFFFFF;
   border-radius: 10px;
 }
+.users-container .guessed {
+  color: #1e7e34;
+}
 
 body {
   background-color: #145C9E;
@@ -66,14 +69,13 @@ button {
 
 .drawing-info {
   border-top: 1px solid #222222;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 #draw-header {
   font-weight: bold;
   font-size: 32px;
+  text-align: center;
+  display: block;
 }
 
 input {
@@ -103,6 +105,29 @@ input {
 ::-webkit-scrollbar-thumb {
   border-radius: 10px;
   background-color: #555;
+}
+
+.round-time-bar {
+  margin: 1rem;
+  overflow: hidden;
+}
+
+.round-time-bar div {
+  height: 5px;
+  animation: roundtime calc(var(--duration) * 1s) steps(var(--duration)) forwards;
+  transform-origin: left center;
+  background: #000000;
+  visibility: hidden;
+}
+
+.round-time-bar[data-style=smooth] div {
+  animation: roundtime calc(var(--duration) * 1s) linear forwards;
+}
+
+@keyframes roundtime {
+  to {
+    transform: scaleX(0);
+  }
 }
 
 /*# sourceMappingURL=app.css.map */

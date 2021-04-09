@@ -11,6 +11,10 @@
                 <canvas id="graphics"></canvas>
                 <div class="drawing-info" style="height: 20%">
                     <span id="draw-header"></span>
+                    
+                <div class="round-time-bar" data-style="smooth" style="--duration: 30;">
+                  <div class="timer"></div>
+                </div>
                 </div>
             </div>
             <div class="chat-container" style=" height: calc( 30% - 10px ); display:flex; flex-direction:column">
@@ -33,16 +37,29 @@ var canvas = document.getElementById("graphics");
     canvas.height = canvas.offsetHeight;
   
     var nickName = prompt("Nickname:");
+    
+    var isPainter = false;
 
     var connection = new signalR.HubConnectionBuilder()
         .configureLogging("trace")
         .withUrl("/hub")
         .build();
     
-    
+    function DisableChat(){
+        var msg = document.querySelector(".msg");
+        msg.disabled = "disabled";
+        var sendBtn = document.querySelector(".sendBtn");
+        sendBtn.disabled = "disabled";
+    }
+    function EnableChat(){
+        var msg = document.querySelector(".msg");
+        msg.disabled = "";
+        var sendBtn = document.querySelector(".sendBtn");
+        sendBtn.disabled = "";   
+    }
     var input = document.querySelector(".msg");
     input.addEventListener("keyup", function(event) {
-      if (event.keyCode === 13) {
+      if (event.keyCode === 13 && !isPainter) {
         var msg = document.querySelector(".msg");
         connection.invoke("processMessage", msg.value);
         input.value = "";
@@ -51,28 +68,47 @@ var canvas = document.getElementById("graphics");
 
     var sendBtn = document.querySelector(".sendBtn");
     sendBtn.addEventListener("click", function () {
+        if (isPainter) return
         var msg = document.querySelector(".msg");
         connection.invoke("processMessage", msg.value);
         input.value = "";
     })
 
-    function refreshUsers(users) {
+    function refreshUsers(users, guessed) {
         var ul = document.querySelector(".users");
         ul.innerHTML = "";
         for (var k in users) {
             var user = users[k];
             var item = document.createElement("li");
             item.innerText = user;
+            for (var g in guessed){
+                if (guessed[g] === user){
+                    item.classList.add("guessed")
+                }
+            }
             ul.appendChild(item);
         }
     }
     function startGame() {
-        connection.invoke("startGame");
+        connection.invoke("startGame",);
     }
-    connection.on("usersChanged", function (users) {
-        refreshUsers(users);
+    connection.on("usersChanged", function (users,guessed) {
+        refreshUsers(users,guessed);
     });
     connection.on("draw!", function () {
+        isPainter = true;
+        
+        const bars = document.querySelectorAll(".round-time-bar");
+          bars.forEach((bar) => {
+            bar.classList.remove("round-time-bar");
+            bar.offsetWidth;
+            bar.classList.add("round-time-bar");
+          })
+        var timer = document.querySelector(".timer");
+          timer.style = "visibility: visible"
+        
+        DisableChat();
+        
         var c = document.querySelector("#graphics");
         var ctx = c.getContext("2d");
         var lastX = -1, lastY = -1;
@@ -107,8 +143,9 @@ var canvas = document.getElementById("graphics");
     connection.on("drawInfo", function (msg) {
         var header = document.getElementById("draw-header");
         header.innerHTML = msg;
-        console.log(msg)
-    });
+        if (msg === "Uhodl jsi!"){
+            DisableChat();
+        }});
     connection.on("chatMessage", function (msg) {
         var chat = document.querySelector(".chat");
         var li = document.createElement("li");
@@ -116,7 +153,34 @@ var canvas = document.getElementById("graphics");
         chat.appendChild(li);
         chat.scrollTop = chat.scrollHeight;
     });
+    connection.on("gameStop", function (msg) {
+                var timer = document.querySelector(".timer");
+                  timer.style = "visibility: hidden"
+        
+        document.querySelector(".startBtn").removeAttribute("disabled");
+        
+/*        const bars = document.querySelectorAll(".round-time-bar");
+          bars.forEach((bar) => {
+            bar.classList.remove("round-time-bar");
+            bar.offsetWidth;
+            bar.classList.add("round-time-bar");
+          });*/
+        
+    });
     connection.on("guess!", function () {
+        isPainter = false;
+        
+        const bars = document.querySelectorAll(".round-time-bar");
+          bars.forEach((bar) => {
+            bar.classList.remove("round-time-bar");
+            bar.offsetWidth;
+            bar.classList.add("round-time-bar");
+          })
+        var timer = document.querySelector(".timer");
+          timer.style = "visibility: visible"
+        
+EnableChat();
+        
         document.querySelector(".startBtn").setAttribute("disabled", "disabled");
     });
     connection.on("drawLines", function (lines) {
