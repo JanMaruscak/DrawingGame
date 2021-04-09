@@ -7,6 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 
 namespace DrawingGame.Hubs
 {
@@ -16,6 +19,7 @@ namespace DrawingGame.Hubs
         private static List<string> Guessed = new List<string>();
         private static string painterId = "";
         private IHubContext<GameHub> _hubContext;
+        private IWebHostEnvironment _webHostEnvironment;
         public async Task SetProfile(string nickName)
         {
             if (users.ContainsValue(nickName)) return;
@@ -38,9 +42,10 @@ namespace DrawingGame.Hubs
         static List<string> ValidResponse = new List<string>();
         private static int GameIndex = 0;
 
-        public GameHub(IHubContext<GameHub> hubContext)
+        public GameHub(IHubContext<GameHub> hubContext, IWebHostEnvironment webHostEnvironment)
         {
-            string wordsRaw = File.ReadAllText(Environment.CurrentDirectory +"/App_Data/words.txt");
+            _webHostEnvironment = webHostEnvironment;
+            string wordsRaw = File.ReadAllText(webHostEnvironment.ContentRootPath +"/App_Data/words.txt");
             wordsRaw = wordsRaw.ToLower();
             Things = wordsRaw.Split(';');
             _hubContext = hubContext;
