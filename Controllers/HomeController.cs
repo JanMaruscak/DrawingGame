@@ -18,12 +18,18 @@ namespace DrawingGame.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string nickname)
         {
+            ViewData["nickname"] = nickname;
             return View();
         }
 
         public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        public IActionResult Login()
         {
             return View();
         }

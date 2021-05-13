@@ -31,6 +31,21 @@
   font-size: 24px;
 }
 
+form {
+  margin: auto;
+  width: 500px;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+label {
+  color: white;
+  font-size: 22px;
+}
+
 .chat {
   list-style-type: none;
   margin-left: 0;
@@ -56,6 +71,19 @@
 
 body {
   background-color: #145C9E;
+}
+
+input[type=text] {
+  user-select: auto;
+}
+
+input[type=submit] {
+  background-color: #52DEE5;
+  border: 0;
+  font-size: 26px;
+  margin: 10px;
+  border-radius: 10px;
+  padding: 15px 35px;
 }
 
 button {

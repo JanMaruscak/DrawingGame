@@ -1,4 +1,7 @@
-﻿<div class="container" style=" height: 80vh;">
+﻿@{  
+    var data = (string)ViewData["nickname"];  
+}  
+<div class="container" style=" height: 80vh;">
     <div class="row" style=" height: 100%;">
         <div class="col-3 users-container" style=" flex-direction: column; display: flex; padding: 0; position:relative;   max-height: calc(100vh - 140px);">
             <span class="users-header">List hráčů</span>
@@ -30,16 +33,16 @@
 <script src="~/lib/signalr/signalr.min.js"></script>
 <script>
 
-var canvas = document.getElementById("graphics");
-  canvas.style.width ='100%';
-  canvas.style.height='80%';
+    var canvas = document.getElementById("graphics");
+    canvas.style.width ='100%';
+    canvas.style.height='80%';
     canvas.width  = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
-  
-    var nickName = prompt("Nickname:");
+
+    var nickName = "@data";
     
     var isPainter = false;
-
+    
     var connection = new signalR.HubConnectionBuilder()
         .configureLogging("trace")
         .withUrl("/hub")
@@ -97,7 +100,6 @@ var canvas = document.getElementById("graphics");
     });
     connection.on("draw!", function () {
         isPainter = true;
-        
         const bars = document.querySelectorAll(".round-time-bar");
           bars.forEach((bar) => {
             bar.classList.remove("round-time-bar");
@@ -119,7 +121,6 @@ var canvas = document.getElementById("graphics");
             lastY = evt.layerY;
         });
         c.addEventListener("mousemove", function (evt) {
-
             if (evt.buttons === 1) { //drzim tlacitko mysi
                 ctx.beginPath();
                 ctx.moveTo(lastX, lastY);
@@ -154,17 +155,9 @@ var canvas = document.getElementById("graphics");
         chat.scrollTop = chat.scrollHeight;
     });
     connection.on("gameStop", function (msg) {
-                var timer = document.querySelector(".timer");
-                  timer.style = "visibility: hidden"
-        
+        var timer = document.querySelector(".timer");
+        timer.style = "visibility: hidden"        
         document.querySelector(".startBtn").removeAttribute("disabled");
-        
-/*        const bars = document.querySelectorAll(".round-time-bar");
-          bars.forEach((bar) => {
-            bar.classList.remove("round-time-bar");
-            bar.offsetWidth;
-            bar.classList.add("round-time-bar");
-          });*/
         
     });
     connection.on("guess!", function () {
